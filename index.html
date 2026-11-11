@@ -2,80 +2,128 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>Dance Runner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dance Runner Pro</title>
 <style>
-  body { background: #ff6b9d; text-align: center; font-family: sans-serif; color: white; }
-  canvas { background: #fff; border-radius: 15px; display: block; margin: 10px auto; }
-  button { padding: 10px 20px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#ff9eb5;text-align:center;font-family:sans-serif;overflow:hidden}
+  h1{color:white;margin:8px;text-shadow:2px 2px 0 #ff5e8a}
+  #scoreBar{background:white;display:inline-block;padding:7px 16px;border-radius:20px;font-weight:bold}
+  #game{position:relative;width:100%;max-width:800px;height:380px;margin:10px auto;background:linear-gradient(#7ec8ff 0%, #c2f0ff 55%, #fff2cc 55%, #a8e6a3 100%);border-radius:15px;overflow:hidden;border:4px solid white}
+  #ground{position:absolute;bottom:0;width:100%;height:60px;background:#7ec850}
+  #road{position:absolute;bottom:55px;width:100%;height:8px;background:#8b5a2b}
+  /* البنت - الاحترافي */
+  #player{position:absolute;left:80px;bottom:55px;width:110px;height:240px;z-index:10}
+  #player img{width:100%;height:100%;object-fit:contain;transform-origin:bottom center}
+  /* حركة الجري - الجسم كامل يهتز + يتمايل */
+  .running img{animation:runBody .45s infinite}
+  @keyframes runBody{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1deg) scaleY(1.02)}}
+  /* القفز */
+  .jumping img{animation:none !important;transform:scale(1.05) !important}
+  /* الرقص - احترافي */
+  .dancing img{animation:dancePro .35s infinite !important}
+  @keyframes dancePro{0%{transform:rotate(-9deg) scale(1.06) translateX(-6px)}50%{transform:rotate(9deg) scale(1.08) translateX(6px)}100%{transform:rotate(-9deg) scale(1.06) translateX(-6px)}}
+  .obstacle{position:absolute;bottom:55px;font-size:38px;z-index:5}
+  .star{position:absolute;font-size:30px;z-index:5;animation:spin 1s infinite}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  #gameover{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);color:white;display:none;justify-content:center;align-items:center;flex-direction:column;z-index:20}
+  #gameover h2{font-size:32px;margin-bottom:10px}
+  button{padding:13px 24px;font-size:18px;border:none;border-radius:14px;cursor:pointer;background:white;margin:5px;font-weight:bold;box-shadow:0 4px 0 #ddd}
+  button:active{transform:translateY(3px);box-shadow:none}
+  #btnJump{background:#ffd93d} #btnDance{background:#ff6bcb;color:white} #btnRestart{background:#4ade80;color:white}
 </style>
 </head>
 <body>
-<h1>💃 Dance Runner</h1>
-<p>مسافة = قفز | D = رقص | النقاط: <span id="score">0</span></p>
-<canvas id="game" width="700" height="300"></canvas>
-<br>
-<button onclick="jump()">🦘 قفز</button>
-<button onclick="dance()">💃 رقص</button>
+<h1>💃 Dance Runner PRO</h1>
+<div id="scoreBar">⭐ النقاط: <span id="score">0</span> | ❤️ <span id="lives">3</span> | 🏆 أفضل: <span id="best">0</span></div>
+
+<div id="game">
+  <div id="ground"></div><div id="road"></div>
+  <div id="player" class="running"><img src="girl.png" alt="girl"></div>
+  <div id="gameover">
+    <h2>😢 خسرت!</h2>
+    <p style="font-size:20px;margin-bottom:15px">نقاطك: <span id="finalScore">0</span></p>
+    <button id="btnRestart" onclick="restart()">🔄 العب مرة أخرى</button>
+  </div>
+</div>
+
+<div>
+  <button id="btnJump" onclick="jump()">🦘 قفز</button>
+  <button id="btnDance" onclick="dance()">💃 رقص</button>
+</div>
+<p style="color:white;margin-top:5px">في الكمبيوتر: مسافة = قفز | D = رقص</p>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-let y = 200, vy = 0, jumping = false, dancing = false, danceTime = 0;
-let score = 0, obstacles = [], stars = [];
-let xStar = 700;
-
-function drawGirl(){
-  ctx.clearRect(0,0,700,300);
-  // الأرض
-  ctx.fillStyle = '#90ee90'; ctx.fillRect(0,250,700,50);
-  // البنت
-  ctx.font = dancing ? '60px Arial' : '50px Arial';
-  // إذا ترقص تبدل الحركة
-  if(dancing){
-    ctx.fillText(danceTime % 2 == 0 ? '💃' : '🕺', 100, y);
-  } else {
-    ctx.fillText('🏃‍♀️', 100, y);
-  }
-  // حواجز
-  ctx.font = '30px Arial';
-  obstacles.forEach(o => ctx.fillText('🧱', o, 225));
-  // نجوم
-  stars.forEach(s => ctx.fillText('⭐', s, 180));
-}
+let score=0, lives=3, isJumping=false, isDancing=false, gameOver=false, speed=5;
+let player=document.getElementById('player');
+let best=localStorage.getItem('best')||0;
+document.getElementById('best').textContent=best;
 
 function jump(){
-  if(!jumping){ vy = -14; jumping = true; }
+  if(isJumping||gameOver) return;
+  isJumping=true;
+  player.classList.remove('running');
+  player.classList.add('jumping');
+  let y=0, vy=-16;
+  let up=setInterval(()=>{
+    y+=vy; vy+=0.9;
+    player.style.bottom=(55 - y)+'px';
+    if(y>=0){ clearInterval(up); player.style.bottom='55px'; isJumping=false; player.classList.remove('jumping'); if(!isDancing) player.classList.add('running'); }
+  },20);
 }
 function dance(){
-  dancing = true; danceTime = 0;
-  score += 10;
-  document.getElementById('score').textContent = score;
-  setTimeout(()=> dancing = false, 800);
+  if(isDancing||gameOver) return;
+  isDancing=true;
+  player.classList.remove('running');
+  player.classList.add('dancing');
+  score+=15; updateScore();
+  setTimeout(()=>{ isDancing=false; player.classList.remove('dancing'); if(!isJumping) player.classList.add('running'); },800);
 }
+function updateScore(){ document.getElementById('score').textContent=score; if(score>best){best=score;localStorage.setItem('best',best);document.getElementById('best').textContent=best;} }
+function restart(){ location.reload(); }
 
-document.addEventListener('keydown', e => {
-  if(e.code === 'Space') jump();
-  if(e.key === 'd' || e.key === 'D') dance();
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();jump();}
+  if(e.key==='d'||e.key==='D') dance();
 });
 
-setInterval(()=>{
-  if(jumping){
-    y += vy; vy += 0.8;
-    if(y >= 200){ y = 200; jumping = false; }
+// توليد الحواجز والنجوم
+let gameEl=document.getElementById('game');
+function spawn(){
+  if(gameOver) return;
+  // حاجز
+  if(Math.random()<0.5){
+    let o=document.createElement('div'); o.className='obstacle'; o.textContent=Math.random()<0.5?'🧱':'🌵';
+    o.style.left='800px'; gameEl.appendChild(o);
+    let x=800;
+    let mv=setInterval(()=>{
+      if(gameOver){clearInterval(mv);return;}
+      x-=speed; o.style.left=x+'px';
+      // تصادم
+      if(x>60 && x<140 && !isJumping){
+        o.remove(); clearInterval(mv);
+        lives--; document.getElementById('lives').textContent=lives;
+        player.style.filter='brightness(0.6)';
+        setTimeout(()=>player.style.filter='none',300);
+        if(lives<=0){ gameOver=true; document.getElementById('finalScore').textContent=score; document.getElementById('gameover').style.display='flex'; }
+      }
+      if(x<-50){ clearInterval(mv); o.remove(); score+=5; updateScore(); }
+    },20);
+  } else {
+    let s=document.createElement('div'); s.className='star'; s.textContent='⭐';
+    s.style.left='800px'; s.style.bottom=(150+Math.random()*80)+'px'; gameEl.appendChild(s);
+    let x=800;
+    let mv=setInterval(()=>{
+      if(gameOver){clearInterval(mv);return;}
+      x-=speed; s.style.left=x+'px';
+      if(x>70 && x<160){ s.remove(); clearInterval(mv); score+=10; updateScore(); }
+      if(x<-50){ clearInterval(mv); s.remove(); }
+    },20);
   }
-  if(dancing) danceTime++;
-  // تحريك الحواجز
-  if(Math.random() < 0.02) obstacles.push(700);
-  if(Math.random() < 0.03) stars.push(700);
-  obstacles = obstacles.map(o => o - 5).filter(o => o > -20);
-  stars = stars.map(s => s - 5).filter(s => s > -20);
-  // جمع النجوم
-  stars = stars.filter(s => {
-    if(Math.abs(s - 100) < 30){ score += 5; document.getElementById('score').textContent = score; return false; }
-    return true;
-  });
-  drawGirl();
-}, 30);
+  // تزيد السرعة مع الوقت
+  speed=Math.min(9, 5 + score/100);
+}
+setInterval(spawn, 900);
 </script>
 </body>
 </html>
