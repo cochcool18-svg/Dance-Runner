@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Dance Runner</title>
+<style>
+  body { background: #ff6b9d; text-align: center; font-family: sans-serif; color: white; }
+  canvas { background: #fff; border-radius: 15px; display: block; margin: 10px auto; }
+  button { padding: 10px 20px; font-size: 18px; border: none; border-radius: 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>💃 Dance Runner</h1>
+<p>مسافة = قفز | D = رقص | النقاط: <span id="score">0</span></p>
+<canvas id="game" width="700" height="300"></canvas>
+<br>
+<button onclick="jump()">🦘 قفز</button>
+<button onclick="dance()">💃 رقص</button>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let y = 200, vy = 0, jumping = false, dancing = false, danceTime = 0;
+let score = 0, obstacles = [], stars = [];
+let xStar = 700;
+
+function drawGirl(){
+  ctx.clearRect(0,0,700,300);
+  // الأرض
+  ctx.fillStyle = '#90ee90'; ctx.fillRect(0,250,700,50);
+  // البنت
+  ctx.font = dancing ? '60px Arial' : '50px Arial';
+  // إذا ترقص تبدل الحركة
+  if(dancing){
+    ctx.fillText(danceTime % 2 == 0 ? '💃' : '🕺', 100, y);
+  } else {
+    ctx.fillText('🏃‍♀️', 100, y);
+  }
+  // حواجز
+  ctx.font = '30px Arial';
+  obstacles.forEach(o => ctx.fillText('🧱', o, 225));
+  // نجوم
+  stars.forEach(s => ctx.fillText('⭐', s, 180));
+}
+
+function jump(){
+  if(!jumping){ vy = -14; jumping = true; }
+}
+function dance(){
+  dancing = true; danceTime = 0;
+  score += 10;
+  document.getElementById('score').textContent = score;
+  setTimeout(()=> dancing = false, 800);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space') jump();
+  if(e.key === 'd' || e.key === 'D') dance();
+});
+
+setInterval(()=>{
+  if(jumping){
+    y += vy; vy += 0.8;
+    if(y >= 200){ y = 200; jumping = false; }
+  }
+  if(dancing) danceTime++;
+  // تحريك الحواجز
+  if(Math.random() < 0.02) obstacles.push(700);
+  if(Math.random() < 0.03) stars.push(700);
+  obstacles = obstacles.map(o => o - 5).filter(o => o > -20);
+  stars = stars.map(s => s - 5).filter(s => s > -20);
+  // جمع النجوم
+  stars = stars.filter(s => {
+    if(Math.abs(s - 100) < 30){ score += 5; document.getElementById('score').textContent = score; return false; }
+    return true;
+  });
+  drawGirl();
+}, 30);
+</script>
+</body>
+</html>
