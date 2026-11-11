@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dance Runner Pro</title>
+<title>Dance Runner PRO</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#ff9eb5;text-align:center;font-family:sans-serif;overflow:hidden}
@@ -12,24 +12,18 @@
   #game{position:relative;width:100%;max-width:800px;height:380px;margin:10px auto;background:linear-gradient(#7ec8ff 0%, #c2f0ff 55%, #fff2cc 55%, #a8e6a3 100%);border-radius:15px;overflow:hidden;border:4px solid white}
   #ground{position:absolute;bottom:0;width:100%;height:60px;background:#7ec850}
   #road{position:absolute;bottom:55px;width:100%;height:8px;background:#8b5a2b}
-  /* البنت - الاحترافي */
   #player{position:absolute;left:80px;bottom:55px;width:110px;height:240px;z-index:10}
   #player img{width:100%;height:100%;object-fit:contain;transform-origin:bottom center}
-  /* حركة الجري - الجسم كامل يهتز + يتمايل */
   .running img{animation:runBody .45s infinite}
   @keyframes runBody{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1deg) scaleY(1.02)}}
-  /* القفز */
   .jumping img{animation:none !important;transform:scale(1.05) !important}
-  /* الرقص - احترافي */
   .dancing img{animation:dancePro .35s infinite !important}
   @keyframes dancePro{0%{transform:rotate(-9deg) scale(1.06) translateX(-6px)}50%{transform:rotate(9deg) scale(1.08) translateX(6px)}100%{transform:rotate(-9deg) scale(1.06) translateX(-6px)}}
   .obstacle{position:absolute;bottom:55px;font-size:38px;z-index:5}
   .star{position:absolute;font-size:30px;z-index:5;animation:spin 1s infinite}
   @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   #gameover{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);color:white;display:none;justify-content:center;align-items:center;flex-direction:column;z-index:20}
-  #gameover h2{font-size:32px;margin-bottom:10px}
-  button{padding:13px 24px;font-size:18px;border:none;border-radius:14px;cursor:pointer;background:white;margin:5px;font-weight:bold;box-shadow:0 4px 0 #ddd}
-  button:active{transform:translateY(3px);box-shadow:none}
+  button{padding:13px 24px;font-size:18px;border:none;border-radius:14px;cursor:pointer;background:white;margin:5px;font-weight:bold}
   #btnJump{background:#ffd93d} #btnDance{background:#ff6bcb;color:white} #btnRestart{background:#4ade80;color:white}
 </style>
 </head>
@@ -39,7 +33,7 @@
 
 <div id="game">
   <div id="ground"></div><div id="road"></div>
-  <div id="player" class="running"><img src="girl.png" alt="girl"></div>
+  <div id="player" class="running"><img src="girl.jpeg" alt="girl"></div>
   <div id="gameover">
     <h2>😢 خسرت!</h2>
     <p style="font-size:20px;margin-bottom:15px">نقاطك: <span id="finalScore">0</span></p>
@@ -51,14 +45,13 @@
   <button id="btnJump" onclick="jump()">🦘 قفز</button>
   <button id="btnDance" onclick="dance()">💃 رقص</button>
 </div>
-<p style="color:white;margin-top:5px">في الكمبيوتر: مسافة = قفز | D = رقص</p>
+<p style="color:white;margin-top:5px">مسافة = قفز | D = رقص</p>
 
 <script>
 let score=0, lives=3, isJumping=false, isDancing=false, gameOver=false, speed=5;
 let player=document.getElementById('player');
 let best=localStorage.getItem('best')||0;
 document.getElementById('best').textContent=best;
-
 function jump(){
   if(isJumping||gameOver) return;
   isJumping=true;
@@ -81,17 +74,13 @@ function dance(){
 }
 function updateScore(){ document.getElementById('score').textContent=score; if(score>best){best=score;localStorage.setItem('best',best);document.getElementById('best').textContent=best;} }
 function restart(){ location.reload(); }
-
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();jump();}
   if(e.key==='d'||e.key==='D') dance();
 });
-
-// توليد الحواجز والنجوم
 let gameEl=document.getElementById('game');
 function spawn(){
   if(gameOver) return;
-  // حاجز
   if(Math.random()<0.5){
     let o=document.createElement('div'); o.className='obstacle'; o.textContent=Math.random()<0.5?'🧱':'🌵';
     o.style.left='800px'; gameEl.appendChild(o);
@@ -99,7 +88,6 @@ function spawn(){
     let mv=setInterval(()=>{
       if(gameOver){clearInterval(mv);return;}
       x-=speed; o.style.left=x+'px';
-      // تصادم
       if(x>60 && x<140 && !isJumping){
         o.remove(); clearInterval(mv);
         lives--; document.getElementById('lives').textContent=lives;
@@ -120,7 +108,6 @@ function spawn(){
       if(x<-50){ clearInterval(mv); s.remove(); }
     },20);
   }
-  // تزيد السرعة مع الوقت
   speed=Math.min(9, 5 + score/100);
 }
 setInterval(spawn, 900);
